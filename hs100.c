@@ -9,6 +9,7 @@ extern char *handler_associate(int argc, char *argv[]);
 extern char *handler_set_server(int argc, char *argv[]);
 extern char *handler_set_relay_state(int argc, char *argv[]);
 extern char *handler_get_realtime(int argc, char *argv[]);
+extern char *handler_set_alias(int argc, char *argv[]);
 
 struct cmd_s {
 	char *command;
@@ -67,6 +68,12 @@ struct cmd_s cmds[] = {
 		.help = "set_server <url>\n"
 			"\t\t\tset cloud server to <url> instead of tplink's",
 		.handler = handler_set_server,
+	},
+  {
+		.command = "alias",
+		.help = "alias <name>\n"
+			"\t\t\tset device alias to <name>",
+		.handler = handler_set_alias,
 	},
 	{
 		.command = NULL,

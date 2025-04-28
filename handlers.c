@@ -70,6 +70,30 @@ char *handler_set_server(int argc, char *argv[])
 	return response;
 }
 
+char *handler_set_alias(int argc, char *argv[])
+{
+	const char *template =
+		"{\"system\":{\"set_dev_alias\":{\"alias\":\"%s\"}}}";
+	char *plug_addr = argv[1];
+	char *name = argv[3];
+	size_t len;
+	char *msg, *response;
+
+	if (argc < 4) {
+		fprintf(stderr, "not enough arguments\n");
+		exit(1);
+	}
+	len = snprintf(NULL, 0, template, name);
+	len++;	/* snprintf does not count the null terminator */
+
+	msg = calloc(1, len);
+	snprintf(msg, len, template, name);
+
+	response = hs100_send(plug_addr, msg);
+
+	return response;
+}
+
 char *handler_set_relay_state(int argc, char *argv[])
 {
 	const char *template =
