@@ -10,13 +10,20 @@ extern char *handler_set_server(int argc, char *argv[]);
 extern char *handler_set_relay_state(int argc, char *argv[]);
 extern char *handler_get_realtime(int argc, char *argv[]);
 extern char *handler_set_alias(int argc, char *argv[]);
+extern char *handler_set_kldim(int argc, char *argv[]);
 
+// global pointer to hold final command executed from handler or direct execution
+char *gcpCommandExecuted = NULL;
+
+// define struct for commands
 struct cmd_s {
 	char *command;
 	char *help;
 	char *json;
 	char *(*handler) (int argc, char *argv[]);
 };
+
+// global struct array with command, help and pointer to handler function
 struct cmd_s cmds[] = {
 	{
 		.command = "associate",
@@ -59,8 +66,7 @@ struct cmd_s cmds[] = {
 	},
 	{
 		.command = "scan",
-		.help = "scan\t\tscan for nearby wifi APs (probably only 2.4"
-			" GHz ones)",
+		.help = "scan\t\tscan for nearby wifi APs (probably only 2.4 GHz ones)",
 		.json = "{\"netif\":{\"get_scaninfo\":{\"refresh\":1}}}",
 	},
 	{
@@ -69,10 +75,35 @@ struct cmd_s cmds[] = {
 			"\t\t\tset cloud server to <url> instead of tplink's",
 		.handler = handler_set_server,
 	},
-  {
+	{
+		.command = "kl110_on",
+		.help = "kl110_on\tTurn on KL110 bulb",
+		.json = "{\"smartlife.iot.smartbulb.lightingservice\":{\"transition_light_state\":{\"on_off\":1}}}",
+	},
+	{
+		.command = "kl110_off",
+		.help = "kl110_off\tTurn off KL110 bulb",
+		.json = "{\"smartlife.iot.smartbulb.lightingservice\":{\"transition_light_state\":{\"on_off\":0}}}",
+	},
+	{
+		.command = "kl110_dim100",
+		.help = "kl110_dim100\tSet KL110 bulb to full intensity",
+		.json = "{\"smartlife.iot.smartbulb.lightingservice\":{\"transition_light_state\":{\"brightness\":100}}}",
+	},
+	{
+		.command = "kl110_dim",
+		.help = "kl110_dim #\tSet KL110 bulb to # intensity",
+		.json = "{\"smartlife.iot.smartbulb.lightingservice\":{\"transition_light_state\":{\"brightness\":%s}}}",
+		.handler = handler_set_kldim,
+	},
+	{
+		.command = "kl110_dim0",
+		.help = "kl110_dim0\tSet KL110 bulb to minimum intensity",
+		.json = "{\"smartlife.iot.smartbulb.lightingservice\":{\"transition_light_state\":{\"brightness\":0}}}",
+	},
+  	{
 		.command = "alias",
-		.help = "alias <name>\n"
-			"\t\t\tset device alias to <name>",
+		.help = "alias <name>\tset device alias to <name>",
 		.handler = handler_set_alias,
 	},
 	{
@@ -91,40 +122,67 @@ struct cmd_s *get_cmd_from_name(char *needle)
 	return NULL;
 }
 
-void print_usage()
+void print_usage(char *cmdname)
 {
-	fprintf(stderr, "hs100 version " VERSION_STRING
-			", Copyright (C) 2018-2019 Jason Benaim.\n"
+	fprintf(stderr, "%s version %s Copyright (C) 2018-2019 Jason Benaim.\n"
+			"\tKL110 commands added 2025, Steve Antonoff\n"
 			"A tool for using certain wifi smart plugs.\n\n"
-			"usage: hs100 <ip> <command>\n\n"
-			"Commands:\n"
+			"usage: %s <ip> <command>\n\n"
+			"Commands:\n", cmdname,VERSION_STRING,cmdname
 	);
 	int cmds_index = 0;
 	while (cmds[cmds_index].command) {
-		fprintf(stderr, "\t%s\n\n", cmds[cmds_index].help);
+		fprintf(stderr, "\t%s\n", cmds[cmds_index].help);
 		cmds_index++;
 	}
-	fprintf(stderr, "Report bugs to https://github.com/jkbenaim/hs100\n");
+	fprintf(stderr, "\nAny json command can be substituted for the pre-defined commands\n");
+	fprintf(stderr, "\tjson command must be enclosed in quotes with embedded quotes and \n\tproperly escaped (i.e., \\\"on_off\\\")\n");
+	fprintf(stderr, "\nReport bugs to https://github.com/jkbenaim/hs100\n");
 }
 
 int main(int argc, char *argv[])
 {
-	if (argc < 3) {
-		print_usage();
-		return 1;
-	}
 	char *plug_addr = argv[1];
 	char *cmd_string = argv[2];
 	char *response = NULL;
+	char *mode = argv[0];
+	char cmd_override[16];
+	struct cmd_s *cmd;
 
-	struct cmd_s *cmd = get_cmd_from_name(cmd_string);
+	if (argc < 3) {
+		print_usage(argv[0]);
+		return 1;
+	}
+	
+	gcpCommandExecuted = calloc(1,200);	// global pointer to command that will be executed
+	
+// handle if executed as kl110 rather than hs100 - rename or symlink
+	if (strstr(mode,"kl110") ) {
+		if (!strcmp(cmd_string,"on") ) {
+			strcpy(cmd_override,"kl110_on");
+			cmd_string = cmd_override;
+		}
+		if (!strcmp(cmd_string,"off") ) {
+			strcpy(cmd_override,"kl110_off");
+			cmd_string = cmd_override;
+		}
+		if (!strcmp(cmd_string,"dim") ) {
+			strcpy(cmd_override,"kl110_dim");
+			cmd_string = cmd_override;
+		}
+	}
+	cmd = get_cmd_from_name(cmd_string);
 	if (cmd != NULL) {
-		if (cmd->handler != NULL)
+		if (cmd->handler != NULL) {
 			response = cmd->handler(argc, argv);
-		if ((response == NULL) && (cmd->json != NULL))
+		}
+		if ((response == NULL) && (cmd->json != NULL)) {
+			strcpy(gcpCommandExecuted,cmd->json);
 			response = hs100_send(plug_addr, cmd->json);
+		}
 	} else {
 		// command not recognized, so send it to the plug raw
+		strcpy(gcpCommandExecuted,cmd_string);
 		response = hs100_send(plug_addr, cmd_string);
 	}
 
@@ -133,8 +191,21 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	printf("%s\n", response);
+	printf("Input arguments: ");
+	{
+		int iArg;
+		for (iArg = 1 ; iArg < argc ; ++iArg)
+			printf("%s ",argv[iArg]);
+		printf("\n");
+	}
+	if (gcpCommandExecuted) {
+		printf("Command: %s\n", gcpCommandExecuted);
+	} else {
+		printf("Basic command: %s\n" , cmd->json);
+	}
+	printf("Result:  %s\n", response);
 
 	free(response);
+	free(gcpCommandExecuted);
 	return 0;
 }

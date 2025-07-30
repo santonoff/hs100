@@ -5,6 +5,8 @@
 #include "comms.h"
 #include "escape.h"
 
+extern char *gcpCommandExecuted; // captute command executed for final output
+
 char *handler_associate(int argc, char *argv[])
 {
 	const char *template =
@@ -24,14 +26,14 @@ char *handler_associate(int argc, char *argv[])
 	if (argc < 6) {
 		fprintf(stderr, "not enough arguments\n");
 		free(password);
-		exit(1);
+		return NULL; // exit(1)
 	}
 	errno = 0;
 	key_type_num = (int)strtol(key_type, &endptr, 10);
 	if (errno || endptr == key_type) {
 		fprintf(stderr, "invalid key type: %s\n", key_type);
 		free(password);
-		exit(1);
+		return NULL; // exit(1)
 	}
 
 	len = snprintf(NULL, 0, template, ssid, password,
@@ -40,7 +42,7 @@ char *handler_associate(int argc, char *argv[])
 
 	msg = calloc(1, len);
 	snprintf(msg, len, template, ssid, password, key_type_num);
-
+	strcpy(gcpCommandExecuted, msg);
 	response = hs100_send(plug_addr, msg);
 	free(password);
 	return response;
@@ -57,13 +59,14 @@ char *handler_set_server(int argc, char *argv[])
 
 	if (argc < 4) {
 		fprintf(stderr, "not enough arguments\n");
-		exit(1);
+		return NULL; // exit(1)
 	}
 	len = snprintf(NULL, 0, template, server);
 	len++;	/* snprintf does not count the null terminator */
 
 	msg = calloc(1, len);
 	snprintf(msg, len, template, server);
+	strcpy(gcpCommandExecuted, msg);
 
 	response = hs100_send(plug_addr, msg);
 
@@ -81,13 +84,14 @@ char *handler_set_alias(int argc, char *argv[])
 
 	if (argc < 4) {
 		fprintf(stderr, "not enough arguments\n");
-		exit(1);
+		return NULL; // exit(1)
 	}
 	len = snprintf(NULL, 0, template, name);
 	len++;	/* snprintf does not count the null terminator */
 
 	msg = calloc(1, len);
 	snprintf(msg, len, template, name);
+	strcpy(gcpCommandExecuted, msg);
 
 	response = hs100_send(plug_addr, msg);
 
@@ -106,6 +110,7 @@ char *handler_set_relay_state(int argc, char *argv[])
 	char *msg, *response;
 
 	if (argc < 4) {
+		fprintf(stderr, "not enough arguments");
 		return NULL;
 	}
 
@@ -114,6 +119,7 @@ char *handler_set_relay_state(int argc, char *argv[])
 
 	msg = calloc(1, len);
 	snprintf(msg, len, template, plug, (onoff[1] == 'n' ? '1' : '0'));
+	strcpy(gcpCommandExecuted, msg);
 
 	response = hs100_send(plug_addr, msg);
 
@@ -131,6 +137,7 @@ char *handler_get_realtime(int argc, char *argv[])
 	char *msg, *response;
 
 	if (argc < 4) {
+		fprintf(stderr, "not enough arguments");
 		return NULL;
 	}
 
@@ -139,8 +146,36 @@ char *handler_get_realtime(int argc, char *argv[])
 
 	msg = calloc(1, len);
 	snprintf(msg, len, template, plug);
+	strcpy(gcpCommandExecuted, msg);
 
 	response = hs100_send(plug_addr, msg);
 
 	return response;
 }
+
+char *handler_set_kldim(int argc, char *argv[])
+{
+	const char *template =
+//		"{\"system\":{\"set_dev_alias\":{\"alias\":\"%s\"}}}";
+		"{\"smartlife.iot.smartbulb.lightingservice\":{\"transition_light_state\":{\"brightness\":%s}}}";
+	char *plug_addr = argv[1];
+	char *dim = argv[3];
+	size_t len;
+	char *msg, *response;
+
+	if (argc < 4) {
+		fprintf(stderr, "not enough arguments\n");
+		return NULL; // exit(1)
+	}
+	len = snprintf(NULL, 0, template, dim);
+	len++;	/* snprintf does not count the null terminator */
+
+	msg = calloc(1, len);
+	snprintf(msg, len, template, dim);
+	strcpy(gcpCommandExecuted, msg);
+
+	response = hs100_send(plug_addr, msg);
+
+	return response;
+}
+
