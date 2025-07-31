@@ -1,9 +1,10 @@
 # hs100
 
-A tool for using TP-Link HS100/HS103/HS105/HS110/HS300 wi-fi smart plugs.
+A tool for using TP-Link HS100/HS103/HS105/HS110/HS300 wi-fi smart plugs and KL110 smart bulbs.
 You can turn them on and off, reboot them, and so on. You can even set them up without using TP-Link's app (see Initial Setup).
 
-Tested to work on Linux, OSX, IRIX, and Windows under WSL.
+Tested to work on Linux, OSX, IRIX, and Windows under WSL.  Code modified to be compatible
+with Microsoft Visual Studio Community Edition to run under native Windows 11.
 
 Loosely based on [pyHS100](https://github.com/GadgetReactor/pyHS100) and
 [research from softScheck](https://www.softscheck.com/en/reverse-engineering-tp-link-hs110/).
@@ -69,10 +70,22 @@ reset the plug and try again. Otherwise, the light on your plug will change
 first to blinking blue, then to solid blue indicating that it has successfully
 connected to your AP.
 
+For the KL110 (and other Kasa Smart Bulbs), the commands are:
+kl110_on - turn on the bulb
+kl110_off - turn off the bulb
+kl110_dim xx - set the bulb to xx dim level
+
+If the file is executed via the name "kl110" rather than "hs100", the 
+"on", "off" and "dim" commands are redirected to the kl110 versions.  
+Either copy, rename or create a link to access the file
+with the make kl110.  To create links, us the ln command in 
+Linux or the mklink command in Windows.
+
 ## Build
 
 Ubuntu instructions
 You will need `build-essential` installed. Then run `make`. This will produce a `hs100` binary which you can use. E.g. `./hs100 192.168.0.1 off`
+For Windows, install the community edition of Visual Studio.  Use the cl command to compile/link the executable.
 
 ## Todo
 
