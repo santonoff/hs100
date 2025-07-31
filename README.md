@@ -36,6 +36,23 @@ The `emeter`, `off` and `on` commands can be used on the individual outlets of m
 - append the ID string to the command line for `emeter`, `off` or `on` like so:
 `hs100 <ip> on 80062947BE0A1339DC7914B75B24A6A51FB6977E02`
 
+### Use with Smart Bulbs (such as KL110)
+
+For the KL110 (and other Kasa Smart Bulbs), the commands are:
+- kl110_on -:turn on the bulb
+- kl110_off : turn off the bulb
+- kl110_dim xx : set the bulb to xx dim level
+
+If the file is executed via the name "kl110" rather than "hs100", the 
+"on", "off" and "dim" commands are redirected to the kl110 versions.  The
+command "kl110 host on" is equivalent to "hs100 host kl110_on". ("host" is
+either IP address or resolvable name.)
+
+Either copy, rename or create a link to access the file
+with the make kl110.  To create links, us the ln command in 
+Linux or the mklink command in Windows.
+
+
 ## Initial Setup
 
 According to TP-Link, initial setup of the plugs is performed by installing
@@ -70,16 +87,6 @@ reset the plug and try again. Otherwise, the light on your plug will change
 first to blinking blue, then to solid blue indicating that it has successfully
 connected to your AP.
 
-For the KL110 (and other Kasa Smart Bulbs), the commands are:
-kl110_on - turn on the bulb
-kl110_off - turn off the bulb
-kl110_dim xx - set the bulb to xx dim level
-
-If the file is executed via the name "kl110" rather than "hs100", the 
-"on", "off" and "dim" commands are redirected to the kl110 versions.  
-Either copy, rename or create a link to access the file
-with the make kl110.  To create links, us the ln command in 
-Linux or the mklink command in Windows.
 
 ## Build
 
