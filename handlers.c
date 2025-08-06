@@ -24,7 +24,7 @@ char *handler_associate(int argc, char *argv[])
 		password = escape_json(password);
 
 	if (argc < 6) {
-		fprintf(stderr, "not enough arguments\n");
+		fprintf(stderr, "associate: not enough arguments\n");
 		free(password);
 		return NULL; // exit(1)
 	}
@@ -58,7 +58,7 @@ char *handler_set_server(int argc, char *argv[])
 	char *msg, *response;
 
 	if (argc < 4) {
-		fprintf(stderr, "not enough arguments\n");
+		fprintf(stderr, "set_server: not enough arguments\n");
 		return NULL; // exit(1)
 	}
 	len = snprintf(NULL, 0, template, server);
@@ -83,7 +83,7 @@ char *handler_set_alias(int argc, char *argv[])
 	char *msg, *response;
 
 	if (argc < 4) {
-		fprintf(stderr, "not enough arguments\n");
+		fprintf(stderr, "set_alias: not enough arguments\n");
 		return NULL; // exit(1)
 	}
 	len = snprintf(NULL, 0, template, name);
@@ -110,7 +110,7 @@ char *handler_set_relay_state(int argc, char *argv[])
 	char *msg, *response;
 
 	if (argc < 4) {
-		fprintf(stderr, "not enough arguments");
+		fprintf(stderr, "set_relay_state (on or off): not enough arguments");
 		return NULL;
 	}
 
@@ -137,7 +137,7 @@ char *handler_get_realtime(int argc, char *argv[])
 	char *msg, *response;
 
 	if (argc < 4) {
-		fprintf(stderr, "not enough arguments");
+		fprintf(stderr, "get_realtime: not enough arguments");
 		return NULL;
 	}
 
@@ -164,7 +164,7 @@ char *handler_set_kldim(int argc, char *argv[])
 	char *msg, *response;
 
 	if (argc < 4) {
-		fprintf(stderr, "not enough arguments\n");
+		fprintf(stderr, "set klmdim: not enough arguments\n");
 		return NULL; // exit(1)
 	}
 	len = snprintf(NULL, 0, template, dim);

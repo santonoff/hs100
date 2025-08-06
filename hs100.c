@@ -33,7 +33,7 @@ struct cmd_s cmds[] = {
 	},
 	{
 		.command = "emeter",
-		.help = "emeter\t\tget realtime power consumption (only works with HS110)",
+		.help = "emeter #\tget realtime power consumption for plug # (only works with HS110)",
 		.handler = handler_get_realtime,
 		.json = "{\"emeter\":{\"get_realtime\":{}}}",
 	},
@@ -49,13 +49,13 @@ struct cmd_s cmds[] = {
 	},
 	{
 		.command = "off",
-		.help = "off\t\tturn the plug off",
+		.help = "off #\t\tturn plug # off",
 		.handler = handler_set_relay_state,
 		.json = "{\"system\":{\"set_relay_state\":{\"state\":0}}}",
 	},
 	{
 		.command = "on",
-		.help = "on\t\tturn the plug on",
+		.help = "on #\t\tturn plug # on",
 		.handler = handler_set_relay_state,
 		.json = "{\"system\":{\"set_relay_state\":{\"state\":1}}}",
 	},
@@ -175,6 +175,9 @@ int main(int argc, char *argv[])
 	if (cmd != NULL) {
 		if (cmd->handler != NULL) {
 			response = cmd->handler(argc, argv);
+			if (response == NULL) {
+				fprintf(stderr,"\nCommand handler returned NULL\n");
+			}
 		}
 		if ((response == NULL) && (cmd->json != NULL)) {
 			strcpy(gcpCommandExecuted,cmd->json);
@@ -186,18 +189,19 @@ int main(int argc, char *argv[])
 		response = hs100_send(plug_addr, cmd_string);
 	}
 
-	if (response == NULL) {
-		fprintf(stderr, "failed to send command\n");
-		return 1;
-	}
-
-	printf("Input arguments: ");
+	printf("\nInput command and arguments: ");
 	{
 		int iArg;
-		for (iArg = 1 ; iArg < argc ; ++iArg)
+		for (iArg = 0 ; iArg < argc ; ++iArg)
 			printf("%s ",argv[iArg]);
 		printf("\n");
 	}
+	
+	if (response == NULL) {
+		fprintf(stderr, "failed to send command %s to %s\n",argv[2], argv[1]);
+		return 1;
+	}
+
 	if (gcpCommandExecuted) {
 		printf("Command: %s\n", gcpCommandExecuted);
 	} else {
